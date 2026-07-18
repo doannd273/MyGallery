@@ -1,4 +1,7 @@
 package com.example.mygallery.ui.gallery
 
-class GalleryContract {
-}
+import com.example.mygallery.model.Image
+
+data class GalleryState(
+    val images: List<Image> = listOf(),
+)
