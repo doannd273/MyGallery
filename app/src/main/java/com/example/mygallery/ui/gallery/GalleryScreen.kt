@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,18 +17,29 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,6 +72,8 @@ fun GalleryRoute(
         modifier = modifier,
         onBackClick = onBackClick,
         state = state,
+        onContinueClick = {},
+        onRemoveImage = {}
     )
 }
 
@@ -68,6 +82,8 @@ fun GalleryScreen(
     modifier: Modifier = Modifier,
     state: GalleryState,
     onBackClick: () -> Unit,
+    onContinueClick: () -> Unit,
+    onRemoveImage: () -> Unit,
 ) {
     Scaffold(
         modifier = modifier
@@ -107,6 +123,12 @@ fun GalleryScreen(
             }
         }
     }
+
+    ActionBottomSheet(
+        imageSelectedList = state.selectedImages,
+        onContinueClick = onContinueClick,
+        onRemoveImage = onRemoveImage,
+    )
 }
 
 @Composable
@@ -138,7 +160,9 @@ fun GalleryItem(
 
         if (image.isSelected && image.positionSelected != NO_POSITION) {
             Box(
-                modifier = Modifier.padding(4.dp).size(30.dp)
+                modifier = Modifier
+                    .padding(4.dp)
+                    .size(30.dp)
                     .clip(CircleShape)
                     .background(Color.Blue)
                     .align(Alignment.TopEnd),
@@ -161,6 +185,126 @@ fun GalleryItem(
                 tint = Color.White,
             )
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ActionBottomSheet(
+    imageSelectedList: List<Image>,
+    onContinueClick: () -> Unit,
+    onRemoveImage: () -> Unit,
+) {
+    var showBottomSheet by rememberSaveable {
+        mutableStateOf(false)
+    }
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            modifier = Modifier
+                .background(Color.White)
+                .fillMaxWidth()
+                .statusBarsPadding(),
+            sheetState = sheetState,
+            onDismissRequest = {
+                showBottomSheet = false
+            }
+        ) {
+            ActionBottomSheetContent(
+                imageSelectedList = imageSelectedList,
+                onContinueClick = onContinueClick,
+                onRemoveImage = onRemoveImage,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionBottomSheetContent(
+    imageSelectedList: List<Image>,
+    onContinueClick: () -> Unit,
+    onRemoveImage: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        LazyRow(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(
+                items = imageSelectedList,
+                key = { it.id },
+            ) { item ->
+                ImageSelectedItem(
+                    imageSelected = item,
+                    onRemoveImage = onRemoveImage,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        TextButton(
+            modifier = Modifier
+                .clip(
+                    RoundedCornerShape(5.dp)
+                )
+                .background(Color.Blue).padding(horizontal = 8.dp),
+            onClick = {
+                onContinueClick()
+            },
+        ) {
+            Text(
+                text = stringResource(R.string.gallery_action_next),
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
+        Spacer(modifier = Modifier.width(10.dp))
+    }
+}
+
+@Composable
+fun ImageSelectedItem(
+    imageSelected: Image,
+    onRemoveImage: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .clip(
+                RoundedCornerShape(5.dp)
+            )
+            .size(80.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        AsyncImage(
+            model = imageSelected.uri,
+            contentDescription = "",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+        )
+
+        Icon(
+            painter = painterResource(id = R.drawable.ic_gallery_close_24),
+            contentDescription = "",
+            modifier = Modifier
+                .size(24.dp)
+                .align(
+                    Alignment.TopEnd
+                )
+                .clickable {
+                    onRemoveImage()
+                },
+            tint = Color.White
+        )
     }
 }
 
@@ -230,7 +374,21 @@ private fun GalleryScreenPreview() {
     MyGalleryTheme {
         GalleryScreen(
             onBackClick = {},
-            state = galleryScreenPreviewState()
+            onContinueClick = {},
+            onRemoveImage = {},
+            state = galleryScreenPreviewState(),
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 393, heightDp = 120)
+@Composable
+private fun ActionBottomSheetPreview() {
+    MyGalleryTheme {
+        ActionBottomSheetContent(
+            imageSelectedList = galleryScreenPreviewState().selectedImages,
+            onContinueClick = {},
+            onRemoveImage = {},
         )
     }
 }
@@ -249,18 +407,24 @@ private fun galleryScreenPreviewState(): GalleryState {
         R.drawable.ic_background_3,
     )
 
-    return GalleryState(
-        images = List(18) { index ->
-            val selectedPosition = selectedPositions[index]
-            val drawableRes = previewDrawables[index % previewDrawables.size]
+    val images = List(18) { index ->
+        val selectedPosition = selectedPositions[index]
+        val drawableRes = previewDrawables[index % previewDrawables.size]
 
-            Image(
-                id = "preview-$index",
-                name = "Preview image $index",
-                uri = Uri.parse("android.resource://$packageName/$drawableRes"),
-                isSelected = selectedPosition != null,
-                positionSelected = selectedPosition ?: NO_POSITION,
-            )
-        }
+        Image(
+            id = "preview-$index",
+            name = "Preview image $index",
+            uri = Uri.parse("android.resource://$packageName/$drawableRes"),
+            isSelected = selectedPosition != null,
+            positionSelected = selectedPosition ?: NO_POSITION,
+        )
+    }
+
+    return GalleryState(
+        images = images,
+        selectedImages = images.filter { image ->
+            image.isSelected && image.positionSelected != NO_POSITION
+        },
     )
 }
+
