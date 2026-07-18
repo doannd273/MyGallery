@@ -1,6 +1,7 @@
 package com.example.mygallery.ui.gallery
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -12,31 +13,28 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -52,7 +51,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import coil3.compose.AsyncImage
 import com.example.mygallery.R
 import com.example.mygallery.model.Image
@@ -72,6 +74,8 @@ fun GalleryRoute(
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) {
@@ -92,6 +96,25 @@ fun GalleryRoute(
         }
     }
 
+    LaunchedEffect(viewModel.effect, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.effect.collect { effect ->
+                when (effect) {
+                    GalleryEffect.ShowMaxSelectionReached -> {
+                        Toast.makeText(
+                            context,
+                            context.getString(
+                                R.string.gallery_selection_limit_error,
+                                MAX_SELECTED_IMAGES,
+                            ),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
+                }
+            }
+        }
+    }
+
     GalleryScreen(
         modifier = modifier,
         onBackClick = onBackClick,
@@ -101,9 +124,6 @@ fun GalleryRoute(
         },
         onRemoveImage = { id ->
             viewModel.onEvent(GalleryEvent.RemoveImage(id))
-        },
-        onActionBottomSheetDismiss = {
-            viewModel.onEvent(GalleryEvent.ActionBottomSheetDismiss)
         },
         onRequestPermissionClick = requestPhotoAccess,
         onRetryClick = refreshImages,
@@ -121,7 +141,6 @@ fun GalleryScreen(
     onBackClick: () -> Unit,
     onContinueClick: () -> Unit,
     onRemoveImage: (id: Long) -> Unit,
-    onActionBottomSheetDismiss: () -> Unit,
     onRequestPermissionClick: () -> Unit,
     onRetryClick: () -> Unit,
 ) {
@@ -141,6 +160,14 @@ fun GalleryScreen(
 
                 HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
             }
+        },
+        bottomBar = {
+            ActionBottomSheet(
+                isVisible = state.isActionBottomSheetVisible,
+                imageSelectedList = state.selectedImages,
+                onContinueClick = onContinueClick,
+                onRemoveImage = onRemoveImage,
+            )
         }
     ) { innerPadding ->
         Box(
@@ -197,14 +224,6 @@ fun GalleryScreen(
             }
         }
     }
-
-    ActionBottomSheet(
-        isVisible = state.isActionBottomSheetVisible,
-        imageSelectedList = state.selectedImages,
-        onDismissRequest = onActionBottomSheetDismiss,
-        onContinueClick = onContinueClick,
-        onRemoveImage = onRemoveImage,
-    )
 }
 
 @Composable
@@ -326,32 +345,28 @@ fun GalleryItem(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActionBottomSheet(
     isVisible: Boolean,
     imageSelectedList: List<Image>,
-    onDismissRequest: () -> Unit,
     onContinueClick: () -> Unit,
     onRemoveImage: (id: Long) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )
+    if (!isVisible) {
+        return
+    }
 
-    if (isVisible) {
-        ModalBottomSheet(
-            modifier = Modifier.fillMaxWidth().systemBarsPadding(),
-            sheetState = sheetState,
-            onDismissRequest = onDismissRequest,
-            containerColor = Color.White,
-        ) {
-            ActionBottomSheetContent(
-                imageSelectedList = imageSelectedList,
-                onContinueClick = onContinueClick,
-                onRemoveImage = onRemoveImage,
-            )
-        }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RectangleShape,
+        color = Color.White,
+        shadowElevation = 0.dp,
+    ) {
+        ActionBottomSheetContent(
+            imageSelectedList = imageSelectedList,
+            onContinueClick = onContinueClick,
+            onRemoveImage = onRemoveImage,
+        )
     }
 }
 
@@ -362,14 +377,20 @@ private fun ActionBottomSheetContent(
     onRemoveImage: (id: Long) -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(
+                start = 20.dp,
+                top = 12.dp,
+                end = 16.dp,
+                bottom = 12.dp,
+            ),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Spacer(modifier = Modifier.width(10.dp))
-
         FlowRow(
-            modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+            modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -381,7 +402,7 @@ private fun ActionBottomSheetContent(
             }
         }
 
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
         TextButton(
             modifier = Modifier
@@ -399,8 +420,6 @@ private fun ActionBottomSheetContent(
                 style = MaterialTheme.typography.titleMedium
             )
         }
-
-        Spacer(modifier = Modifier.width(10.dp))
     }
 }
 
@@ -508,7 +527,6 @@ private fun GalleryScreenPreview() {
             onBackClick = {},
             onContinueClick = {},
             onRemoveImage = {},
-            onActionBottomSheetDismiss = {},
             onRequestPermissionClick = {},
             onRetryClick = {},
             onItemClick = {},

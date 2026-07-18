@@ -3,6 +3,8 @@ package com.example.mygallery.ui.gallery
 import com.example.mygallery.model.Image
 import com.example.mygallery.permission.PhotoAccess
 
+const val MAX_SELECTED_IMAGES = 5
+
 data class GalleryState(
     val access: PhotoAccess = PhotoAccess.Denied,
     val isLoading: Boolean = false,
@@ -15,5 +17,8 @@ data class GalleryState(
 sealed class GalleryEvent {
     data class ItemClick(val id: Long) : GalleryEvent()
     data class RemoveImage(val id: Long) : GalleryEvent()
-    data object ActionBottomSheetDismiss : GalleryEvent()
+}
+
+sealed class GalleryEffect {
+    data object ShowMaxSelectionReached : GalleryEffect()
 }

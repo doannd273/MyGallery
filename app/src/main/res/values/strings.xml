@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">MyGallery</string>
+    <string name="home_title">Home</string>
     <string name="home_action_open_gallery">Chọn ảnh</string>
     <string name="home_selected_images_empty">Chưa có ảnh được chọn</string>
     <string name="gallery_title">Thư viện ảnh</string>
@@ -19,6 +20,7 @@
     <string name="gallery_selected_count">%1$d</string>
     <string name="gallery_selected_count_description">Đã chọn %1$d mục</string>
     <string name="gallery_selected_order_description">Mục đã chọn số %1$d</string>
+    <string name="gallery_selection_limit_error">Chỉ được chọn tối đa %1$d ảnh</string>
     <string name="gallery_thumbnail_description">Ảnh thu nhỏ</string>
     <string name="gallery_permission_title">Cho phép truy cập thư viện ảnh</string>
     <string name="gallery_permission_message">Ứng dụng cần quyền truy cập ảnh để hiển thị thư viện.</string>

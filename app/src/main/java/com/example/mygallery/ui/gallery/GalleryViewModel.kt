@@ -7,8 +7,11 @@ import com.example.mygallery.model.NO_POSITION
 import com.example.mygallery.permission.PhotoAccess
 import com.example.mygallery.repository.GalleryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -22,6 +25,9 @@ class GalleryViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(GalleryState())
     val uiState: StateFlow<GalleryState> = _uiState.asStateFlow()
 
+    private val _effect = MutableSharedFlow<GalleryEffect>()
+    val effect: SharedFlow<GalleryEffect> = _effect.asSharedFlow()
+
     fun onEvent(event: GalleryEvent) {
         when (event) {
             is GalleryEvent.ItemClick -> {
@@ -30,12 +36,6 @@ class GalleryViewModel @Inject constructor(
 
             is GalleryEvent.RemoveImage -> {
                 removeImageSelection(event.id)
-            }
-
-            GalleryEvent.ActionBottomSheetDismiss -> {
-                _uiState.update { state ->
-                    state.copy(isActionBottomSheetVisible = false)
-                }
             }
         }
     }
@@ -102,6 +102,16 @@ class GalleryViewModel @Inject constructor(
     }
 
     private fun toggleImageSelection(id: Long) {
+        val currentState = _uiState.value
+        val currentSelectedIds = currentState.selectedImages.map { image -> image.id }
+
+        if (id !in currentSelectedIds && currentSelectedIds.size >= MAX_SELECTED_IMAGES) {
+            viewModelScope.launch {
+                _effect.emit(GalleryEffect.ShowMaxSelectionReached)
+            }
+            return
+        }
+
         _uiState.update { state ->
             val currentSelectedIds = state.selectedImages.map { image -> image.id }
             val nextSelectedIds = if (id in currentSelectedIds) {
