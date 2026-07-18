@@ -2,6 +2,8 @@ package com.example.mygallery.ui.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mygallery.model.Image
+import com.example.mygallery.model.NO_POSITION
 import com.example.mygallery.permission.PhotoAccess
 import com.example.mygallery.repository.GalleryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +25,17 @@ class GalleryViewModel @Inject constructor(
     fun onEvent(event: GalleryEvent) {
         when (event) {
             is GalleryEvent.ItemClick -> {
+                toggleImageSelection(event.id)
+            }
+
+            is GalleryEvent.RemoveImage -> {
+                removeImageSelection(event.id)
+            }
+
+            GalleryEvent.ActionBottomSheetDismiss -> {
+                _uiState.update { state ->
+                    state.copy(isActionBottomSheetVisible = false)
+                }
             }
         }
     }
@@ -34,6 +47,7 @@ class GalleryViewModel @Inject constructor(
                     access = access,
                     isLoading = false,
                     hasLoadError = false,
+                    isActionBottomSheetVisible = false,
                     images = emptyList(),
                     selectedImages = emptyList(),
                 )
@@ -60,13 +74,17 @@ class GalleryViewModel @Inject constructor(
                 galleryRepository.getImages()
             }.onSuccess { images ->
                 _uiState.update { state ->
+                    val selectedIds = state.selectedImages.map { image -> image.id }
+                    val updatedImages = images.withSelection(selectedIds)
+                    val selectedImages = updatedImages.selectedBy(selectedIds)
+
                     state.copy(
                         isLoading = false,
                         hasLoadError = false,
-                        images = images,
-                        selectedImages = state.selectedImages.filter { selectedImage ->
-                            images.any { image -> image.id == selectedImage.id }
-                        },
+                        images = updatedImages,
+                        selectedImages = selectedImages,
+                        isActionBottomSheetVisible =
+                            state.isActionBottomSheetVisible && selectedImages.isNotEmpty(),
                     )
                 }
             }.onFailure {
@@ -74,11 +92,68 @@ class GalleryViewModel @Inject constructor(
                     state.copy(
                         isLoading = false,
                         hasLoadError = true,
+                        isActionBottomSheetVisible = false,
                         images = emptyList(),
                         selectedImages = emptyList(),
                     )
                 }
             }
+        }
+    }
+
+    private fun toggleImageSelection(id: Long) {
+        _uiState.update { state ->
+            val currentSelectedIds = state.selectedImages.map { image -> image.id }
+            val nextSelectedIds = if (id in currentSelectedIds) {
+                currentSelectedIds.filterNot { selectedId -> selectedId == id }
+            } else {
+                currentSelectedIds + id
+            }
+            val updatedImages = state.images.withSelection(nextSelectedIds)
+            val selectedImages = updatedImages.selectedBy(nextSelectedIds)
+
+            state.copy(
+                images = updatedImages,
+                selectedImages = selectedImages,
+                isActionBottomSheetVisible = selectedImages.isNotEmpty(),
+            )
+        }
+    }
+
+    private fun removeImageSelection(id: Long) {
+        _uiState.update { state ->
+            val nextSelectedIds = state.selectedImages
+                .map { image -> image.id }
+                .filterNot { selectedId -> selectedId == id }
+            val updatedImages = state.images.withSelection(nextSelectedIds)
+            val selectedImages = updatedImages.selectedBy(nextSelectedIds)
+
+            state.copy(
+                images = updatedImages,
+                selectedImages = selectedImages,
+                isActionBottomSheetVisible = selectedImages.isNotEmpty(),
+            )
+        }
+    }
+
+    private fun List<Image>.withSelection(selectedIds: List<Long>): List<Image> {
+        val selectedPositions = selectedIds
+            .withIndex()
+            .associate { (index, id) -> id to index + 1 }
+
+        return map { image ->
+            val position = selectedPositions[image.id]
+
+            image.copy(
+                isSelected = position != null,
+                positionSelected = position ?: NO_POSITION,
+            )
+        }
+    }
+
+    private fun List<Image>.selectedBy(selectedIds: List<Long>): List<Image> {
+        return selectedIds.mapNotNull { selectedId ->
+            firstOrNull { image -> image.id == selectedId && image.isSelected }
         }
     }
 }

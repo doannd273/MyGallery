@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -38,9 +40,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,6 +68,7 @@ fun GalleryRoute(
     modifier: Modifier = Modifier,
     viewModel: GalleryViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
+    onContinueClick: (List<Image>) -> Unit,
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -96,11 +96,20 @@ fun GalleryRoute(
         modifier = modifier,
         onBackClick = onBackClick,
         state = state,
-        onContinueClick = {},
-        onRemoveImage = {},
+        onContinueClick = {
+            onContinueClick(state.selectedImages)
+        },
+        onRemoveImage = { id ->
+            viewModel.onEvent(GalleryEvent.RemoveImage(id))
+        },
+        onActionBottomSheetDismiss = {
+            viewModel.onEvent(GalleryEvent.ActionBottomSheetDismiss)
+        },
         onRequestPermissionClick = requestPhotoAccess,
         onRetryClick = refreshImages,
-        onIte
+        onItemClick = { id ->
+            viewModel.onEvent(GalleryEvent.ItemClick(id))
+        },
     )
 }
 
@@ -111,7 +120,8 @@ fun GalleryScreen(
     onItemClick: (id: Long) -> Unit,
     onBackClick: () -> Unit,
     onContinueClick: () -> Unit,
-    onRemoveImage: () -> Unit,
+    onRemoveImage: (id: Long) -> Unit,
+    onActionBottomSheetDismiss: () -> Unit,
     onRequestPermissionClick: () -> Unit,
     onRetryClick: () -> Unit,
 ) {
@@ -189,7 +199,9 @@ fun GalleryScreen(
     }
 
     ActionBottomSheet(
+        isVisible = state.isActionBottomSheetVisible,
         imageSelectedList = state.selectedImages,
+        onDismissRequest = onActionBottomSheetDismiss,
         onContinueClick = onContinueClick,
         onRemoveImage = onRemoveImage,
     )
@@ -317,27 +329,22 @@ fun GalleryItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActionBottomSheet(
+    isVisible: Boolean,
     imageSelectedList: List<Image>,
+    onDismissRequest: () -> Unit,
     onContinueClick: () -> Unit,
-    onRemoveImage: () -> Unit,
+    onRemoveImage: (id: Long) -> Unit,
 ) {
-    var showBottomSheet by rememberSaveable {
-        mutableStateOf(false)
-    }
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
 
-    if (showBottomSheet) {
+    if (isVisible) {
         ModalBottomSheet(
-            modifier = Modifier
-                .background(Color.White)
-                .fillMaxWidth()
-                .statusBarsPadding(),
+            modifier = Modifier.fillMaxWidth().systemBarsPadding(),
             sheetState = sheetState,
-            onDismissRequest = {
-                showBottomSheet = false
-            }
+            onDismissRequest = onDismissRequest,
+            containerColor = Color.White,
         ) {
             ActionBottomSheetContent(
                 imageSelectedList = imageSelectedList,
@@ -352,7 +359,7 @@ fun ActionBottomSheet(
 private fun ActionBottomSheetContent(
     imageSelectedList: List<Image>,
     onContinueClick: () -> Unit,
-    onRemoveImage: () -> Unit,
+    onRemoveImage: (id: Long) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -362,7 +369,7 @@ private fun ActionBottomSheetContent(
         Spacer(modifier = Modifier.width(10.dp))
 
         FlowRow(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -400,7 +407,7 @@ private fun ActionBottomSheetContent(
 @Composable
 fun ImageSelectedItem(
     imageSelected: Image,
-    onRemoveImage: () -> Unit,
+    onRemoveImage: (id: Long) -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -426,7 +433,7 @@ fun ImageSelectedItem(
                     Alignment.TopEnd
                 )
                 .clickable {
-                    onRemoveImage()
+                    onRemoveImage(imageSelected.id)
                 },
             tint = Color.White
         )
@@ -501,6 +508,7 @@ private fun GalleryScreenPreview() {
             onBackClick = {},
             onContinueClick = {},
             onRemoveImage = {},
+            onActionBottomSheetDismiss = {},
             onRequestPermissionClick = {},
             onRetryClick = {},
             onItemClick = {},
@@ -564,6 +572,7 @@ private fun galleryScreenPreviewState(): GalleryState {
 
     return GalleryState(
         access = PhotoAccess.Full,
+        isActionBottomSheetVisible = true,
         images = images,
         selectedImages = images.filter { image ->
             image.isSelected && image.positionSelected != NO_POSITION

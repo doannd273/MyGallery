@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">MyGallery</string>
+    <string name="home_action_open_gallery">Chọn ảnh</string>
+    <string name="home_selected_images_empty">Chưa có ảnh được chọn</string>
     <string name="gallery_title">Thư viện ảnh</string>
     <string name="gallery_action_close">Đóng</string>
     <string name="gallery_action_next">Tiếp</string>
