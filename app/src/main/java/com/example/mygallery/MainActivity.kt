@@ -11,6 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import com.example.mygallery.ui.navigation.AppNavHost
 import com.example.mygallery.ui.theme.MyGalleryTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -22,28 +24,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyGalleryTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
+                    AppNavHost(
+                        modifier = Modifier.padding(innerPadding),
+                        navController = rememberNavController()
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MyGalleryTheme {
-        Greeting("Android")
     }
 }
