@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,25 +59,7 @@ fun HomeScreen(
             .statusBarsPadding(),
         topBar = {
             Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.home_title),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-
-                    Button(
-                        onClick = goToGallery,
-                    ) {
-                        Text(text = stringResource(R.string.home_action_open_gallery))
-                    }
-                }
+                HomeTopBar(goToGallery = goToGallery)
 
                 HorizontalDivider()
             }
@@ -87,6 +70,9 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .fillMaxSize(),
         ) {
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             if (selectedImages.isEmpty()) {
                 Text(
                     text = stringResource(R.string.home_selected_images_empty),
@@ -119,6 +105,29 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun HomeTopBar(goToGallery: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.home_title),
+            style = MaterialTheme.typography.titleLarge,
+        )
+
+        Button(
+            onClick = goToGallery,
+        ) {
+            Text(text = stringResource(R.string.home_action_open_gallery))
         }
     }
 }

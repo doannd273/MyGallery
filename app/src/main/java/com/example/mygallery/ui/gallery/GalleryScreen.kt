@@ -64,6 +64,7 @@ import com.example.mygallery.permission.PhotoAccess
 import com.example.mygallery.permission.getPhotoAccess
 import com.example.mygallery.permission.getRequiredPhotoPermissions
 import com.example.mygallery.ui.theme.MyGalleryTheme
+import androidx.core.net.toUri
 
 @Composable
 fun GalleryRoute(
@@ -118,6 +119,20 @@ fun GalleryRoute(
     GalleryScreen(
         modifier = modifier,
         onBackClick = onBackClick,
+        onSettingClick = {
+            Toast.makeText(
+                context,
+                context.getString(R.string.gallery_setting_click_message),
+                Toast.LENGTH_SHORT,
+            ).show()
+        },
+        onCameraClick = {
+            Toast.makeText(
+                context,
+                context.getString(R.string.gallery_camera_click_message),
+                Toast.LENGTH_SHORT,
+            ).show()
+        },
         state = state,
         onContinueClick = {
             onContinueClick(state.selectedImages)
@@ -139,6 +154,8 @@ fun GalleryScreen(
     state: GalleryState,
     onItemClick: (id: Long) -> Unit,
     onBackClick: () -> Unit,
+    onSettingClick: () -> Unit,
+    onCameraClick: () -> Unit,
     onContinueClick: () -> Unit,
     onRemoveImage: (id: Long) -> Unit,
     onRequestPermissionClick: () -> Unit,
@@ -155,7 +172,9 @@ fun GalleryScreen(
                 horizontalAlignment = Alignment.Start,
             ) {
                 TopAppBar(
-                    onBackClick = onBackClick
+                    onBackClick = onBackClick,
+                    onSettingClick = onSettingClick,
+                    onCameraClick = onCameraClick,
                 )
 
                 HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
@@ -461,7 +480,9 @@ fun ImageSelectedItem(
 
 @Composable
 fun TopAppBar(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onSettingClick: () -> Unit,
+    onCameraClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -493,9 +514,7 @@ fun TopAppBar(
 
         IconButton(
             modifier = Modifier.size(50.dp),
-            onClick = {
-
-            },
+            onClick = onSettingClick,
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_gallery_settings_24),
@@ -506,9 +525,7 @@ fun TopAppBar(
 
         IconButton(
             modifier = Modifier.size(50.dp),
-            onClick = {
-
-            },
+            onClick = onCameraClick,
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_gallery_camera_24),
@@ -525,6 +542,8 @@ private fun GalleryScreenPreview() {
     MyGalleryTheme {
         GalleryScreen(
             onBackClick = {},
+            onSettingClick = {},
+            onCameraClick = {},
             onContinueClick = {},
             onRemoveImage = {},
             onRequestPermissionClick = {},
@@ -580,7 +599,7 @@ private fun galleryScreenPreviewState(): GalleryState {
         Image(
             id = index.toLong(),
             displayName = "Preview image $index",
-            uri = Uri.parse("android.resource://$packageName/$drawableRes"),
+            uri = "android.resource://$packageName/$drawableRes".toUri(),
             isSelected = selectedPosition != null,
             positionSelected = selectedPosition ?: NO_POSITION,
             sizeBytes = 256_000L + index * 32_000L,

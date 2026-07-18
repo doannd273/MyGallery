@@ -8,6 +8,8 @@
     <string name="gallery_action_next">Tiếp</string>
     <string name="gallery_action_settings">Cài đặt</string>
     <string name="gallery_action_camera">Camera</string>
+    <string name="gallery_setting_click_message">Đã bấm Cài đặt</string>
+    <string name="gallery_camera_click_message">Đã bấm Camera</string>
     <string name="gallery_action_open_camera">Mở camera</string>
     <string name="gallery_action_select_album">Chọn album</string>
     <string name="gallery_action_select_media">Chọn ảnh hoặc video</string>

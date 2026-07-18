@@ -46,11 +46,11 @@ fun AppNavHost(
         composable<GalleryDestination> {
             GalleryRoute(
                 onBackClick = {
-                    navController.popBackStack()
+                    navController.popBackStack<HomeDestination>(inclusive = false)
                 },
                 onContinueClick = { images ->
                     selectedImages = images
-                    navController.popBackStack()
+                    navController.popBackStack<HomeDestination>(inclusive = false)
                 }
             )
         }
