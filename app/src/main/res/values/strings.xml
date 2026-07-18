@@ -1,3 +1,25 @@
 <resources>
     <string name="app_name">MyGallery</string>
+    <string name="gallery_title">Thư viện ảnh</string>
+    <string name="gallery_action_close">Đóng</string>
+    <string name="gallery_action_next">Tiếp</string>
+    <string name="gallery_action_settings">Cài đặt</string>
+    <string name="gallery_action_camera">Camera</string>
+    <string name="gallery_action_open_camera">Mở camera</string>
+    <string name="gallery_action_select_album">Chọn album</string>
+    <string name="gallery_action_select_media">Chọn ảnh hoặc video</string>
+    <string name="gallery_action_unselect_media">Bỏ chọn ảnh hoặc video</string>
+    <string name="gallery_action_remove_selected_media">Bỏ khỏi danh sách đã chọn</string>
+    <string name="gallery_album_all">Thư viện ảnh</string>
+    <string name="gallery_media_type_photo">Ảnh</string>
+    <string name="gallery_media_type_video">Video</string>
+    <string name="gallery_selected_count">%1$d</string>
+    <string name="gallery_selected_count_description">Đã chọn %1$d mục</string>
+    <string name="gallery_selected_order_description">Mục đã chọn số %1$d</string>
+    <string name="gallery_thumbnail_description">Ảnh thu nhỏ</string>
+    <string name="gallery_permission_title">Cho phép truy cập thư viện ảnh</string>
+    <string name="gallery_permission_message">Ứng dụng cần quyền truy cập ảnh và video để hiển thị thư viện.</string>
+    <string name="gallery_permission_open_settings">Mở cài đặt</string>
+    <string name="gallery_empty_title">Chưa có ảnh hoặc video</string>
+    <string name="gallery_empty_message">Ảnh và video sẽ xuất hiện ở đây khi thiết bị có dữ liệu.</string>
 </resources>
