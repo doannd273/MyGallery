@@ -6,11 +6,13 @@ const val NO_POSITION = -1
 const val DEFAULT_POSITION = 1
 
 data class Image(
-    val id: String,
-    val name: String,
+    val id: Long,
+    val displayName: String,
     val uri: Uri,
     val isSelected: Boolean = false,
     val positionSelected: Int = NO_POSITION,
+    val sizeBytes: Long,
+    val mimeType: String,
 )
 
 fun Image.getPositionText(): String {
